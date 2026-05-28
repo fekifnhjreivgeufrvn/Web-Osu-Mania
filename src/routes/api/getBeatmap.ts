@@ -3,8 +3,8 @@ import type { BeatmapSet } from "@/lib/osuApi";
 import { createFileRoute } from "@tanstack/react-router";
 import { env } from "cloudflare:workers";
 import {
-  corsHeaders,
   getAccessToken,
+  getCorsHeaders,
   getRateLimitMessage,
   trimBeatmapSet,
 } from "./-utils";
@@ -13,6 +13,8 @@ export const Route = createFileRoute("/api/getBeatmap")({
   server: {
     handlers: {
       GET: async ({ request }) => {
+        const corsHeaders = getCorsHeaders(request);
+
         if (!rateLimit(request)) {
           return new Response("Too many requests. Slow down!", {
             status: 429,

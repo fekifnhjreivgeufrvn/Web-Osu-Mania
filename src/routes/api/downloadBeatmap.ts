@@ -1,11 +1,13 @@
 import { rateLimit } from "@/lib/api/ratelimit";
 import { createFileRoute } from "@tanstack/react-router";
-import { corsHeaders } from "./-utils";
+import { getCorsHeaders } from "./-utils";
 
 export const Route = createFileRoute("/api/downloadBeatmap")({
   server: {
     handlers: {
       GET: async ({ request }) => {
+        const corsHeaders = getCorsHeaders(request);
+
         if (!rateLimit(request)) {
           return new Response("Too many requests. Slow down!", {
             status: 429,

@@ -7,13 +7,25 @@ type OAuthTokenData = {
   access_token: string;
 };
 
-export const corsHeaders = {
-  "Access-Control-Allow-Credentials": "true",
-  "Access-Control-Allow-Origin": "https://hectickiwi.github.io",
-  "Access-Control-Allow-Methods": "GET,OPTIONS,PATCH,DELETE,POST,PUT",
-  "Access-Control-Allow-Headers":
-    "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version",
-};
+const ALLOWED_ORIGINS = new Set([
+  "https://hectickiwi.github.io",
+  "https://webosumania.com",
+  "http://localhost:3000",
+  "http://127.0.0.1:3000",
+]);
+
+export function getCorsHeaders(request: Request) {
+  const origin = request.headers.get("origin");
+
+  return {
+    "Access-Control-Allow-Credentials": "true",
+    "Access-Control-Allow-Origin":
+      origin && ALLOWED_ORIGINS.has(origin) ? origin : "https://hectickiwi.github.io",
+    "Access-Control-Allow-Methods": "GET,OPTIONS,PATCH,DELETE,POST,PUT",
+    "Access-Control-Allow-Headers":
+      "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version",
+  };
+}
 
 export async function getAccessToken() {
   const OSU_API = env.OSU_API;
