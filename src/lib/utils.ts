@@ -8,7 +8,9 @@ import { twMerge } from "tailwind-merge";
 import type { EncodedMods } from "./replay";
 import { decodeMods } from "./replay";
 
-export const BASE_PATH = import.meta.env.VITE_BASE_URL ?? "";
+export const ASSET_BASE_PATH = import.meta.env.BASE_URL ?? "";
+export const API_BASE_PATH =
+  import.meta.env.VITE_API_BASE_URL ?? import.meta.env.VITE_BASE_URL ?? "";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -293,7 +295,7 @@ export function getJudgementUrl(
   judgement: Judgement,
   judgementSet: JudgementSetId,
 ) {
-  return `${BASE_PATH}/skin/judgements-${judgementSet}/mania-hit${judgement === 320 ? "300g" : judgement}.png`;
+  return `${ASSET_BASE_PATH}skin/judgements-${judgementSet}/mania-hit${judgement === 320 ? "300g" : judgement}.png`;
 }
 
 export function getClassNamesForGrade(grade: Grade) {

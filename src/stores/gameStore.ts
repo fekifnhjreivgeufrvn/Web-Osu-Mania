@@ -1,7 +1,7 @@
 import { getBeatmapSetIdFromOsz } from "@/lib/beatmapParser";
 import type { BeatmapSet } from "@/lib/osuApi";
 import { getBeatmapSet } from "@/lib/osuApi";
-import { BASE_PATH } from "@/lib/utils";
+import { API_BASE_PATH } from "@/lib/utils";
 import { createSelectors } from "@/lib/zustand";
 import type { ReplayData } from "@/osuMania/systems/replayRecorder";
 import { Howler } from "howler";
@@ -79,7 +79,7 @@ const useGameStoreBase = create<GameState>()(
         // Fetch beatmap set data from osu (cover BG, preview audio, diff star ratings, etc.)
         // Theoretically I could do this manually but that's too much work :<
         const url = queryString.stringifyUrl({
-          url: `${BASE_PATH}/api/getBeatmap`,
+          url: `${API_BASE_PATH}/api/getBeatmap`,
           query: { beatmapSetId },
         });
 

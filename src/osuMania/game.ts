@@ -8,7 +8,7 @@ import type {
   TimingPoint,
 } from "@/lib/beatmapParser";
 import { decodeMods } from "@/lib/replay";
-import { BASE_PATH, scaleWidth } from "@/lib/utils";
+import { ASSET_BASE_PATH, scaleWidth } from "@/lib/utils";
 import type { ColumnColor, Settings } from "@/stores/settingsStore";
 import { useSettingsStore } from "@/stores/settingsStore";
 import type { Column, GameState, PlayResults } from "@/types";
@@ -1086,7 +1086,7 @@ export class Game {
     }
 
     new Howl({
-      src: [`${BASE_PATH}/skin/failsound.mp3`],
+      src: [`${ASSET_BASE_PATH}skin/failsound.mp3`],
       format: "mp3",
       preload: true,
       autoplay: true,

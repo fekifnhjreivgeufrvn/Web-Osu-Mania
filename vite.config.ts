@@ -8,7 +8,9 @@ import tsconfigPaths from "vite-tsconfig-paths";
 const env = loadEnv(process.env.NODE_ENV as string, process.cwd(), "VITE_");
 
 export default defineConfig({
-  base: env.VITE_PRERENDER ? "/Web-Osu-Mania/" : "/",
+  base:
+    env.VITE_BASE_URL ??
+    (env.VITE_PRERENDER === "true" ? "/Web-Osu-Mania/" : "/"),
   server: {
     port: 3000,
   },

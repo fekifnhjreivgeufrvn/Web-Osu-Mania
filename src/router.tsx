@@ -1,4 +1,4 @@
-import { createRouter } from "@tanstack/react-router";
+import { createHashHistory, createRouter } from "@tanstack/react-router";
 import CatchBoundary from "./components/catchBoundary";
 import NotFound from "./components/notFound";
 import { routeTree } from "./routeTree.gen";
@@ -6,6 +6,7 @@ import { routeTree } from "./routeTree.gen";
 export function getRouter() {
   const router = createRouter({
     routeTree,
+    history: createHashHistory(),
     scrollRestoration: true,
     defaultErrorComponent: CatchBoundary,
     defaultNotFoundComponent: () => <NotFound />,
