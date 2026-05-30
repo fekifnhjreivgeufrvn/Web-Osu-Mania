@@ -1,0 +1,50 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "deploy-site",
+			"type": "shell",
+			"command": "npm run deploy",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "deploy-site-bypass",
+			"type": "shell",
+			"command": "powershell.exe -NoLogo -ExecutionPolicy Bypass -Command \"npm run deploy\"",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "whoami",
+			"type": "shell",
+			"command": "powershell.exe -NoLogo -ExecutionPolicy Bypass -Command \"wrangler whoami\"",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "whoami-npx",
+			"type": "shell",
+			"command": "powershell.exe -NoLogo -ExecutionPolicy Bypass -Command \"npx wrangler whoami\"",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "wrangler-login",
+			"type": "shell",
+			"command": "powershell.exe -NoLogo -ExecutionPolicy Bypass -Command \"npx wrangler login\"",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		}
+	]
+}

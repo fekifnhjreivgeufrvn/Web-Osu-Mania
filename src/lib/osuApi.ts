@@ -13,6 +13,7 @@ import {
 } from "./searchParams/sortParam";
 import type { Stars } from "./searchParams/starsParam";
 import { API_BASE_PATH } from "./utils";
+import { useSettingsStore } from "@/stores/settingsStore";
 
 const RULESETS = ["fruits", "mania", "osu", "taiko"] as const;
 export type Ruleset = (typeof RULESETS)[number];
@@ -27,6 +28,14 @@ const STATUSES = [
   "wip",
 ] as const;
 export type Status = (typeof STATUSES)[number];
+
+// NeriNyan API response type
+type NerinyanSearchResponse = {
+  beatmapsets?: BeatmapSet[];
+  beatmapsets_count?: number;
+  total?: number;
+  offset?: number;
+};
 
 // Commented properties are unused and removed before caching
 
@@ -48,6 +57,148 @@ export type Beatmap = {
   count_circles: number; // Tap note count
   count_sliders: number; // Hold note count
 };
+
+// Helper function to map NeriNyan status to osu! API status
+function mapNerinyanStatusToStandard(status: string | null): Status {
+  const statusMap: Record<string, Status> = {
+    ranked: "ranked",
+    approved: "ranked",
+    qualified: "qualified",
+    loved: "loved",
+    pending: "pending",
+    wip: "wip",
+    graveyard: "graveyard",
+  };
+  return statusMap[status?.toLowerCase() || "pending"] || "pending";
+}
+
+// Fetch beatmap sets from NeriNyan API
+async function getBeatmapSetsFromNerinyan({
+  query,
+  category,
+  sortCriteria = DEFAULT_SORT_CRITERIA,
+  sortDirection = DEFAULT_SORT_DIRECTION,
+  keys,
+  stars,
+  nsfw = true,
+}: {
+  query: string;
+  category: Category;
+  sortCriteria: SortCriteria;
+  sortDirection: SortDirection;
+  keys: string[];
+  stars: Stars;
+  nsfw: boolean;
+  genre: Genre;
+  language: Language;
+}) {
+  const { min, max } = stars;
+
+  // Build search query
+  const q = [
+    stars.min !== null && `stars>=${min}`,
+    stars.max !== null && `stars<=${max}`,
+    keys && keys.map((key) => `key=${key}`).join(" "),
+    query,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  // Map sort criteria
+  const sortMap: Record<string, string> = {
+    title: "title",
+    artist: "artist",
+    creator: "creator",
+    difficulty: "difficulty",
+    updated: "updated",
+    ranked: "ranked",
+    plays: "plays",
+    favorites: "favorites",
+  };
+
+  const nerinyanSort = sortMap[sortCriteria] || "updated";
+  const sortOrder = sortDirection === "asc" ? "asc" : "desc";
+
+  // Map category/status
+  const statusMap: Record<string, string> = {
+    Any: "any",
+    Ranked: "ranked",
+    Qualified: "qualified",
+    Loved: "loved",
+    Pending: "pending",
+    WIP: "wip",
+    Graveyard: "graveyard",
+  };
+  
+  const nerinyanStatus = statusMap[category] || "any";
+
+  const url = queryString.stringifyUrl({
+    url: "https://api.nerinyan.moe/v2/search",
+    query: {
+      q: q || undefined,
+      m: "3", // 3 = mania mode
+      sort: `${nerinyanSort}_${sortOrder}`,
+      nsfw: nsfw ? "true" : "false",
+      s: nerinyanStatus !== "any" ? nerinyanStatus : undefined,
+    },
+  });
+
+  const res = await fetch(url);
+
+  if (!res.ok) {
+    let errorMessage = `Code ${res.status}`;
+    try {
+      const message = await res.text();
+      errorMessage += `: ${message}`;
+    } catch (error) {}
+    throw new Error(errorMessage);
+  }
+
+  const data = await res.json() as NerinyanSearchResponse;
+
+  // Transform NeriNyan response to match GetBeatmapsResponse format
+  const beatmapsets = (data.beatmapsets || []).map(set => ({
+    ...set,
+    // Ensure status is mapped correctly
+    status: mapNerinyanStatusToStandard(set.status),
+  }));
+
+  return {
+    beatmapsets,
+    search: { sort: `${nerinyanSort}_${sortOrder}` },
+    recommended_difficulty: null,
+    error: null,
+    total: data.total || data.beatmapsets_count || 0,
+    cursor: null,
+    cursor_string: "",
+  } as GetBeatmapsResponse;
+}
+
+// Fetch single beatmap set from NeriNyan API
+async function getBeatmapSetFromNerinyan(beatmapSetId: number) {
+  const url = `https://api.nerinyan.moe/v2/search?setId=${beatmapSetId}&m=3`;
+
+  const res = await fetch(url);
+
+  if (!res.ok) {
+    const message = await res.text();
+    throw new Error(message);
+  }
+
+  const data = await res.json() as NerinyanSearchResponse;
+  
+  if (!data.beatmapsets || data.beatmapsets.length === 0) {
+    throw new Error("Beatmap set not found");
+  }
+
+  const beatmapSet = data.beatmapsets[0];
+  
+  // Ensure status is mapped correctly
+  return {
+    ...beatmapSet,
+    status: mapNerinyanStatusToStandard(beatmapSet.status),
+  } as BeatmapSet;
+}
 
 // type Covers = {
 // cover: string;
@@ -105,6 +256,24 @@ export async function getBeatmapSets({
   genre: Genre;
   language: Language;
 }) {
+  // Check if NeriNyan is selected as the beatmap provider
+  const beatmapProvider = useSettingsStore.getState().beatmapProvider;
+  
+  if (beatmapProvider === "NeriNyan") {
+    return getBeatmapSetsFromNerinyan({
+      query,
+      category,
+      sortCriteria,
+      sortDirection,
+      keys,
+      stars,
+      nsfw,
+      genre,
+      language,
+    });
+  }
+
+  // Fallback to original backend proxy
   const { min, max } = stars;
 
   const q = [
@@ -152,6 +321,14 @@ export async function getBeatmapSets({
 }
 
 export async function getBeatmapSet(beatmapSetId: number) {
+  // Check if NeriNyan is selected as the beatmap provider
+  const beatmapProvider = useSettingsStore.getState().beatmapProvider;
+  
+  if (beatmapProvider === "NeriNyan") {
+    return getBeatmapSetFromNerinyan(beatmapSetId);
+  }
+
+  // Fallback to original backend proxy
   const url = queryString.stringifyUrl({
     url: `${API_BASE_PATH}/api/getBeatmap`,
     query: { beatmapSetId },
