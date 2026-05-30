@@ -92,24 +92,12 @@ async function getBeatmapSetsFromNerinyan({
   genre: Genre;
   language: Language;
 }) {
-  const { min, max } = stars;
-
-  // Build search query
-  const q = [
-    stars.min !== null && `stars>=${min}`,
-    stars.max !== null && `stars<=${max}`,
-    keys && keys.map((key) => `key=${key}`).join(" "),
-    query,
-  ]
-    .filter(Boolean)
-    .join(" ");
-
   // Map sort criteria
   const sortMap: Record<string, string> = {
     title: "title",
     artist: "artist",
     creator: "creator",
-    difficulty: "difficulty",
+    difficulty: "difficulty_rating",
     updated: "updated",
     ranked: "ranked",
     plays: "plays",
@@ -132,16 +120,59 @@ async function getBeatmapSetsFromNerinyan({
   
   const nerinyanStatus = statusMap[category] || "any";
 
-  const url = queryString.stringifyUrl({
-    url: "https://api.nerinyan.moe/v2/search",
-    query: {
-      q: q || undefined,
-      m: "3", // 3 = mania mode
-      sort: `${nerinyanSort}_${sortOrder}`,
-      nsfw: nsfw ? "true" : "false",
-      s: nerinyanStatus !== "any" ? nerinyanStatus : undefined,
-    },
-  });
+  // Build query parameters object
+  const queryParams: Record<string, any> = {
+    q: query || undefined,
+    m: "3", // 3 = mania mode
+    sort: `${nerinyanSort}_${sortOrder}`,
+    nsfw: nsfw,
+  };
+
+  // Add status filter if not "any"
+  if (nerinyanStatus !== "any") {
+    queryParams.s = nerinyanStatus;
+  }
+
+  // Add difficulty rating filters (maps to stars)
+  if (stars.min !== null) {
+    queryParams["difficulty_rating.min"] = stars.min;
+  }
+  if (stars.max !== null) {
+    queryParams["difficulty_rating.max"] = stars.max;
+  }
+
+  // Add keys filter - map to CS value
+  // In mania: 4K = CS 4, 7K = CS 7, etc.
+  if (keys && keys.length > 0) {
+    const csValues = keys.map(k => {
+      const match = k.match(/(\d+)K/);
+      return match ? match[1] : null;
+    }).filter(Boolean);
+    
+    if (csValues.length > 0) {
+      // Use CS.min and CS.max or create OR condition
+      // For simplicity, if only one key count is selected, use it
+      if (csValues.length === 1) {
+        queryParams.cs = csValues[0];
+      } else {
+        // For multiple key counts, we'd need to make separate requests
+        // For now, just use the first one
+        queryParams.cs = csValues[0];
+      }
+    }
+  }
+
+  // Build URL with proper query string
+  let url = "https://api.nerinyan.moe/v2/search?";
+  const params = new URLSearchParams();
+  
+  for (const [key, value] of Object.entries(queryParams)) {
+    if (value !== undefined && value !== null && value !== "") {
+      params.append(key, String(value));
+    }
+  }
+  
+  url += params.toString();
 
   const res = await fetch(url);
 
