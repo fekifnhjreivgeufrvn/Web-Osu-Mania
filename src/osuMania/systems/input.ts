@@ -51,6 +51,8 @@ export class InputSystem {
   private processInputQueue() {
     const now = Math.round(this.game.song.seek() * 1000);
 
+    this.inputQueue.sort((a, b) => a.timeElapsed - b.timeElapsed);
+
     // Process all queued events
     for (const event of this.inputQueue) {
       // Only process events within a reasonable time window (100ms)
