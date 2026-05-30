@@ -88,6 +88,13 @@
 }
 
 @layer base {
+  canvas {
+    touch-action: manipulation;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
   :root {
     /* Hue is overridden in settings store */
     --hue: 212;

@@ -2,10 +2,17 @@ import type { Game } from "../game";
 import type { Hold } from "../sprites/hold/hold";
 import type { Tap } from "../sprites/tap/tap";
 
+interface InputEvent {
+  type: "hit" | "release";
+  column: number;
+  timeElapsed: number;
+}
+
 export class InputSystem {
   private game: Game;
   private keybindsMap: Map<string, number>;
   private columnPressedKeybinds: Set<string>[];
+  private inputQueue: InputEvent[] = [];
 
   public gamepadState: boolean[] = [];
 
@@ -41,6 +48,76 @@ export class InputSystem {
     document.removeEventListener("keyup", this.handleKeyUp);
   }
 
+  private processInputQueue() {
+    const now = Math.round(this.game.song.seek() * 1000);
+
+    // Process all queued events
+    for (const event of this.inputQueue) {
+      // Only process events within a reasonable time window (100ms)
+      if (Math.abs(now - event.timeElapsed) < 100) {
+        if (event.type === "hit") {
+          this.processHit(event.column, event.timeElapsed);
+        } else if (event.type === "release") {
+          this.processRelease(event.column, event.timeElapsed);
+        }
+      }
+    }
+
+    this.inputQueue = [];
+  }
+
+  private enqueueInput(
+    type: "hit" | "release",
+    column: number,
+    timeElapsed: number,
+  ) {
+    this.inputQueue.push({ type, column, timeElapsed });
+  }
+
+  private processHit(column: number, timeElapsed: number) {
+    if (this.pressedColumns[column]) {
+      return;
+    }
+
+    this.tappedColumns[column] = true;
+    this.pressedColumns[column] = true;
+
+    if (!this.game.replayPlayer && this.game.state !== "PLAY") {
+      return;
+    }
+
+    this.checkLateMisses(timeElapsed);
+
+    if (this.game.state === "PLAY") {
+      this.game.audioSystem.playNextHitsounds(column);
+    }
+
+    this.game.replayRecorder?.record(column, true);
+    this.game.columns[column][this.game.currentColumnIndices[column]]?.hit(
+      timeElapsed,
+    );
+  }
+
+  private processRelease(column: number, timeElapsed: number) {
+    if (!this.pressedColumns[column]) {
+      return;
+    }
+
+    this.pressedColumns[column] = false;
+    this.releasedColumns[column] = true;
+
+    if (!this.game.replayPlayer && this.game.state !== "PLAY") {
+      return;
+    }
+
+    this.checkLateMisses(timeElapsed);
+
+    this.game.replayRecorder?.record(column, false);
+    this.game.columns[column][this.game.currentColumnIndices[column]]?.release(
+      timeElapsed,
+    );
+  }
+
   private initKeybindsMap() {
     const keybinds =
       this.game.settings.keybinds.keyModes[this.game.difficulty.keyCount - 1];
@@ -55,55 +132,25 @@ export class InputSystem {
   }
 
   public hit(column: number, timeElapsed?: number, isAfterSeek?: boolean) {
-    if (this.pressedColumns[column]) {
-      return;
-    }
-
-    this.tappedColumns[column] = true;
-    this.pressedColumns[column] = true;
-
-    if (!this.game.replayPlayer && this.game.state !== "PLAY") {
-      return;
-    }
-
     if (!timeElapsed) {
       this.game.timeElapsed = Math.round(this.game.song.seek() * 1000);
+    } else {
+      this.game.timeElapsed = timeElapsed;
     }
 
-    this.checkLateMisses(timeElapsed ?? this.game.timeElapsed);
-
-    if (this.game.state === "PLAY" && !isAfterSeek) {
-      this.game.audioSystem.playNextHitsounds(column);
-    }
-
-    this.game.replayRecorder?.record(column, true);
-    this.game.columns[column][this.game.currentColumnIndices[column]]?.hit(
-      timeElapsed,
-    );
+    // Queue the input for processing
+    this.enqueueInput("hit", column, timeElapsed ?? this.game.timeElapsed);
   }
 
   public release(column: number, timeElapsed?: number) {
-    if (!this.pressedColumns[column]) {
-      return;
-    }
-
-    this.pressedColumns[column] = false;
-    this.releasedColumns[column] = true;
-
-    if (!this.game.replayPlayer && this.game.state !== "PLAY") {
-      return;
-    }
-
     if (!timeElapsed) {
       this.game.timeElapsed = Math.round(this.game.song.seek() * 1000);
+    } else {
+      this.game.timeElapsed = timeElapsed;
     }
 
-    this.checkLateMisses(timeElapsed ?? this.game.timeElapsed);
-
-    this.game.replayRecorder?.record(column, false);
-    this.game.columns[column][this.game.currentColumnIndices[column]]?.release(
-      timeElapsed,
-    );
+    // Queue the input for processing
+    this.enqueueInput("release", column, timeElapsed ?? this.game.timeElapsed);
   }
 
   public checkLateMisses(timeElapsed: number): void {
@@ -139,6 +186,10 @@ export class InputSystem {
         .sort((a, b) => getLateMissTime(a) - getLateMissTime(b))
         .forEach((hitObject) => hitObject.update(timeElapsed));
     }
+  }
+
+  public processInputs() {
+    this.processInputQueue();
   }
 
   public updateGamepadInputs() {

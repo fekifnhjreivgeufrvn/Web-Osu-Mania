@@ -303,6 +303,7 @@ export class Game {
 
   public dispose() {
     this.inputSystem.dispose();
+    this.touchHitboxes.dispose();
     this.audioSystem.dispose();
 
     window.removeEventListener("resize", this.resize);
@@ -591,6 +592,7 @@ export class Game {
   private update(time: Ticker) {
     this.fps?.update(time.FPS);
     this.inputSystem.updateGamepadInputs();
+    this.inputSystem.processInputs();
 
     if (this.inputSystem.pauseTapped && !this.finished) {
       this.setIsPaused((prev) => !prev);
