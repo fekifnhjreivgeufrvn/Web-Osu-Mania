@@ -39,8 +39,8 @@ const GameModal = () => {
   const [showHud, setShowHud] = useState(true);
   const search = Route.useSearch();
   const multiplayerRoomId = search.multiplayerRoomId;
-  const currentRoom = useMultiplayerStore.use.currentRoom();
-  const setCurrentRoom = useMultiplayerStore.use.setCurrentRoom();
+  const currentRoom = useMultiplayerStore((state) => state.currentRoom);
+  const setCurrentRoom = useMultiplayerStore((state) => state.setCurrentRoom);
   const setMultiplayerRoomId = useGameStore.use.setMultiplayerRoomId();
 
   // Sync multiplayer query param into game state
