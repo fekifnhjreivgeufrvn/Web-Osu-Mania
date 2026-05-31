@@ -16,12 +16,15 @@ type GameState = {
   beatmapId: number | null;
   replayData: ReplayData | null;
   scrollPosition: number | null;
+  multiplayerRoomId: string | null;
+  isMultiplayer: boolean;
   startGame: (beatmapId: number) => void;
   startReplay: (replay: ReplayData) => Promise<void>;
   setBeatmapSet: (beatmapSet: BeatmapSet | null) => void;
   closeGame: () => void;
   setUploadedBeatmapSet: (file: File | null) => void;
   setReplayData: (replay: ReplayData | null) => void;
+  setMultiplayerRoomId: (roomId: string | null) => void;
 };
 
 const useGameStoreBase = create<GameState>()(
@@ -31,6 +34,8 @@ const useGameStoreBase = create<GameState>()(
     beatmapId: null,
     replayData: null,
     scrollPosition: null,
+    multiplayerRoomId: null,
+    isMultiplayer: false,
 
     startGame: (beatmapId: number) => {
       set((state) => {
@@ -117,6 +122,13 @@ const useGameStoreBase = create<GameState>()(
     setBeatmapSet: (beatmapSet: BeatmapSet | null) => {
       set((state) => {
         state.beatmapSet = beatmapSet;
+      });
+    },
+
+    setMultiplayerRoomId: (roomId: string | null) => {
+      set((state) => {
+        state.multiplayerRoomId = roomId;
+        state.isMultiplayer = !!roomId;
       });
     },
   })),

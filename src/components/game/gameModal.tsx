@@ -6,10 +6,12 @@ import { loadAssets } from "@/osuMania/assets";
 import type { ReplayData } from "@/osuMania/systems/replayRecorder";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { Route } from "@/routes";
 import { useBeatmapSetCacheStore } from "../../stores/beatmapSetCacheStore";
 import { useGameStore } from "../../stores/gameStore";
 import { useSettingsStore } from "../../stores/settingsStore";
 import { useStoredBeatmapSetsStore } from "../../stores/storedBeatmapSetsStore";
+import { useMultiplayerStore } from "@/stores/multiplayerStore";
 import GameScreens from "./gameScreens";
 
 const GameModal = () => {
@@ -35,6 +37,47 @@ const GameModal = () => {
   );
   const [downloadPercent, setDownloadPercent] = useState(0);
   const [showHud, setShowHud] = useState(true);
+  const search = Route.useSearch();
+  const multiplayerRoomId = search.multiplayerRoomId;
+  const currentRoom = useMultiplayerStore.use.currentRoom();
+  const setCurrentRoom = useMultiplayerStore.use.setCurrentRoom();
+  const setMultiplayerRoomId = useGameStore.use.setMultiplayerRoomId();
+
+  // Sync multiplayer query param into game state
+  useEffect(() => {
+    setMultiplayerRoomId(multiplayerRoomId ?? null);
+
+    if (!multiplayerRoomId) {
+      return;
+    }
+
+    if (currentRoom?.id === multiplayerRoomId) {
+      return;
+    }
+
+    let aborted = false;
+    const fetchRoom = async () => {
+      try {
+        const response = await fetch(`/api/multiplayer/room.${multiplayerRoomId}`);
+        if (!response.ok) {
+          return;
+        }
+
+        const room = await response.json();
+        if (!aborted) {
+          setCurrentRoom(room);
+        }
+      } catch (error) {
+        console.warn("Unable to load multiplayer room:", error);
+      }
+    };
+
+    fetchRoom();
+
+    return () => {
+      aborted = true;
+    };
+  }, [multiplayerRoomId, currentRoom?.id, setCurrentRoom, setMultiplayerRoomId]);
 
   // Prevent user from selecting while game is open
   useEffect(() => {

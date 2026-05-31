@@ -18,6 +18,10 @@
         {
             "binding": "BEATMAP_SET_DATA",
             "id": "db5d38d39f9b497f994b4783b226b338"
+        },
+        {
+            "binding": "MULTIPLAYER_ROOMS",
+            "id": "multiplayer-rooms-kv"
         }
     ],
     "migrations": [

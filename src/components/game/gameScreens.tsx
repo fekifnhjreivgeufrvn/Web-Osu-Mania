@@ -3,6 +3,7 @@ import { cn } from "@/lib/utils";
 import { Game } from "@/osuMania/game";
 import type { ReplayData } from "@/osuMania/systems/replayRecorder";
 import { useSettingsStore } from "@/stores/settingsStore";
+import { useMultiplayerStore } from "@/stores/multiplayerStore";
 import type { PlayResults } from "@/types";
 import type { Dispatch, RefObject, SetStateAction } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -13,6 +14,7 @@ import ReplayControls from "./replayControls";
 import ResultsScreen from "./resultsScreen";
 import RetryWidget from "./retryWidget";
 import VolumeWidget from "./volumeWidget";
+import { MultiplayerLeaderboard } from "@/components/multiplayer/multiplayerLeaderboard";
 
 const GameScreens = ({
   beatmapData,
@@ -30,7 +32,9 @@ const GameScreens = ({
   setShowHud: Dispatch<SetStateAction<boolean>>;
 }) => {
   const beatmapId = useGameStore.use.beatmapId();
+  const multiplayerRoomId = useGameStore.use.multiplayerRoomId();
   const keybinds = useSettingsStore.use.keybinds();
+  const { username: currentUsername } = useMultiplayerStore();
   const [game, setGame] = useState<Game | null>(null);
   const [isPaused, setIsPaused] = useState(false);
   const [results, setResults] = useState<PlayResults | null>(null);
@@ -66,6 +70,8 @@ const GameScreens = ({
       replayData,
       retry,
       videoEl,
+      multiplayerRoomId ?? undefined,
+      currentUsername || undefined,
     );
     setGame(gameInstance);
     gameInstance.main(containerRef.current, initialShowHud.current);
@@ -80,7 +86,7 @@ const GameScreens = ({
         videoEl.currentTime = 0;
       }
     };
-  }, [beatmapData, replayData, retry, beatmapId, videoRef]);
+  }, [beatmapData, replayData, retry, beatmapId, videoRef, multiplayerRoomId, currentUsername]);
 
   // Pause logic
   useEffect(() => {
@@ -150,6 +156,7 @@ const GameScreens = ({
         {game && !results && <RetryWidget retry={retry} />}
         {game && !results && <PauseButton setIsPaused={setIsPaused} />}
         {game && !results && replayData && <ReplayControls game={game} />}
+        {game && !results && multiplayerRoomId && <MultiplayerLeaderboard />}
 
         {isPaused && game && (
           <PauseScreen

@@ -68,6 +68,8 @@ import { ReplayPlayer } from "./systems/replayPlayer";
 import type { ReplayData } from "./systems/replayRecorder";
 import { ReplayRecorder } from "./systems/replayRecorder";
 import { ScoreSystem } from "./systems/score";
+import { MultiplayerSyncSystem } from "./systems/multiplayerSync";
+import { useMultiplayerStore } from "@/stores/multiplayerStore";
 
 PixiPlugin.registerPIXI(PIXI);
 
@@ -96,6 +98,7 @@ export class Game {
   public scoreSystem: ScoreSystem;
   public inputSystem: InputSystem;
   public audioSystem: AudioSystem;
+  public multiplayerSync?: MultiplayerSyncSystem;
 
   // Replay Systems
   public replayRecorder?: ReplayRecorder;
@@ -170,6 +173,12 @@ export class Game {
   private retry: () => void;
 
   private finished = false;
+  private lastMultiplayerScore = {
+    score: 0,
+    accuracy: 0,
+    combo: 0,
+    failed: false,
+  };
 
   // Results chart data
   public timelineData: TimelineDataPoint[] = [];
@@ -181,6 +190,8 @@ export class Game {
     replayData: ReplayData | null,
     retry: () => void,
     videoEl: HTMLVideoElement | null,
+    multiplayerRoomId?: string,
+    currentUsername?: string,
   ) {
     gsap.registerPlugin(PixiPlugin);
 
@@ -284,6 +295,14 @@ export class Game {
     this.inputSystem = new InputSystem(this);
     this.audioSystem = new AudioSystem(this, beatmapData.sounds);
     this.healthSystem = new HealthSystem(this);
+
+    // Initialize multiplayer sync if in a multiplayer room
+    if (multiplayerRoomId && currentUsername) {
+      this.multiplayerSync = new MultiplayerSyncSystem(
+        multiplayerRoomId,
+        currentUsername,
+      );
+    }
 
     this.song = beatmapData.song.howl;
     this.song.volume(this.settings.musicVolume);
@@ -698,6 +717,39 @@ export class Game {
     if (!isAfterSeek) {
       this.judgement?.showJudgement();
     }
+
+    // Sync multiplayer score updates
+    if (this.multiplayerSync) {
+      const score = this.scoreSystem.score;
+      const accuracy = this.scoreSystem.accuracy;
+      const combo = this.scoreSystem.maxCombo;
+      const failed = this.state === "FAIL";
+
+      const scoreChanged =
+        score !== this.lastMultiplayerScore.score ||
+        accuracy !== this.lastMultiplayerScore.accuracy ||
+        combo !== this.lastMultiplayerScore.combo ||
+        failed !== this.lastMultiplayerScore.failed;
+
+      if (scoreChanged) {
+        useMultiplayerStore.getState().updatePlayerScore(
+          this.multiplayerSync.username,
+          score,
+          accuracy,
+          combo,
+          failed,
+        );
+
+        this.lastMultiplayerScore = {
+          score,
+          accuracy,
+          combo,
+          failed,
+        };
+      }
+
+      this.multiplayerSync.updateScore(score, accuracy, combo, failed);
+    }
   }
 
   public getNextHitObject(columnId: number) {
@@ -1050,6 +1102,23 @@ export class Game {
 
     this.scoreSystem.score = Math.round(this.scoreSystem.score);
 
+    if (this.multiplayerSync) {
+      const score = this.scoreSystem.score;
+      const accuracy = this.scoreSystem.accuracy;
+      const combo = this.scoreSystem.maxCombo;
+      const failed = false;
+
+      useMultiplayerStore.getState().updatePlayerScore(
+        this.multiplayerSync.username,
+        score,
+        accuracy,
+        combo,
+        failed,
+      );
+
+      await this.multiplayerSync.finalizeScore(score, accuracy, combo, failed);
+    }
+
     // Record remaining release inputs
     for (let i = 0; i < this.difficulty.keyCount; i++) {
       this.replayRecorder?.record(i, false);
@@ -1081,6 +1150,23 @@ export class Game {
     }
 
     this.scoreSystem.score = Math.round(this.scoreSystem.score);
+
+    if (this.multiplayerSync) {
+      const score = this.scoreSystem.score;
+      const accuracy = this.scoreSystem.accuracy;
+      const combo = this.scoreSystem.maxCombo;
+      const failed = true;
+
+      useMultiplayerStore.getState().updatePlayerScore(
+        this.multiplayerSync.username,
+        score,
+        accuracy,
+        combo,
+        failed,
+      );
+
+      await this.multiplayerSync.finalizeScore(score, accuracy, combo, failed);
+    }
 
     // Record remaining release inputs
     for (let i = 0; i < this.difficulty.keyCount; i++) {

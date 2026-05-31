@@ -10,15 +10,25 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as UpdatesRouteImport } from './routes/updates'
+import { Route as MultiplayerRouteImport } from './routes/multiplayer'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as MultiplayerRoomIdRouteImport } from './routes/multiplayer.$roomId'
+import { Route as ApiMultiplayerRouteImport } from './routes/api/multiplayer'
 import { Route as ApiGetBeatmapsRouteImport } from './routes/api/getBeatmaps'
 import { Route as ApiGetBeatmapRouteImport } from './routes/api/getBeatmap'
 import { Route as ApiDownloadBeatmapRouteImport } from './routes/api/downloadBeatmap'
+import { Route as ApiMultiplayerRoomRoomIdRouteImport } from './routes/api/multiplayer/room.$roomId'
+import { Route as ApiMultiplayerRoomRoomIdQueueRouteImport } from './routes/api/multiplayer/room.$roomId.queue'
 
 const UpdatesRoute = UpdatesRouteImport.update({
   id: '/updates',
   path: '/updates',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MultiplayerRoute = MultiplayerRouteImport.update({
+  id: '/multiplayer',
+  path: '/multiplayer',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FaqRoute = FaqRouteImport.update({
@@ -29,6 +39,16 @@ const FaqRoute = FaqRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MultiplayerRoomIdRoute = MultiplayerRoomIdRouteImport.update({
+  id: '/$roomId',
+  path: '/$roomId',
+  getParentRoute: () => MultiplayerRoute,
+} as any)
+const ApiMultiplayerRoute = ApiMultiplayerRouteImport.update({
+  id: '/api/multiplayer',
+  path: '/api/multiplayer',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiGetBeatmapsRoute = ApiGetBeatmapsRouteImport.update({
@@ -46,66 +66,110 @@ const ApiDownloadBeatmapRoute = ApiDownloadBeatmapRouteImport.update({
   path: '/api/downloadBeatmap',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiMultiplayerRoomRoomIdRoute =
+  ApiMultiplayerRoomRoomIdRouteImport.update({
+    id: '/room/$roomId',
+    path: '/room/$roomId',
+    getParentRoute: () => ApiMultiplayerRoute,
+  } as any)
+const ApiMultiplayerRoomRoomIdQueueRoute =
+  ApiMultiplayerRoomRoomIdQueueRouteImport.update({
+    id: '/queue',
+    path: '/queue',
+    getParentRoute: () => ApiMultiplayerRoomRoomIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/faq': typeof FaqRoute
+  '/multiplayer': typeof MultiplayerRouteWithChildren
   '/updates': typeof UpdatesRoute
   '/api/downloadBeatmap': typeof ApiDownloadBeatmapRoute
   '/api/getBeatmap': typeof ApiGetBeatmapRoute
   '/api/getBeatmaps': typeof ApiGetBeatmapsRoute
+  '/api/multiplayer': typeof ApiMultiplayerRouteWithChildren
+  '/multiplayer/$roomId': typeof MultiplayerRoomIdRoute
+  '/api/multiplayer/room/$roomId': typeof ApiMultiplayerRoomRoomIdRouteWithChildren
+  '/api/multiplayer/room/$roomId/queue': typeof ApiMultiplayerRoomRoomIdQueueRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/faq': typeof FaqRoute
+  '/multiplayer': typeof MultiplayerRouteWithChildren
   '/updates': typeof UpdatesRoute
   '/api/downloadBeatmap': typeof ApiDownloadBeatmapRoute
   '/api/getBeatmap': typeof ApiGetBeatmapRoute
   '/api/getBeatmaps': typeof ApiGetBeatmapsRoute
+  '/api/multiplayer': typeof ApiMultiplayerRouteWithChildren
+  '/multiplayer/$roomId': typeof MultiplayerRoomIdRoute
+  '/api/multiplayer/room/$roomId': typeof ApiMultiplayerRoomRoomIdRouteWithChildren
+  '/api/multiplayer/room/$roomId/queue': typeof ApiMultiplayerRoomRoomIdQueueRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/faq': typeof FaqRoute
+  '/multiplayer': typeof MultiplayerRouteWithChildren
   '/updates': typeof UpdatesRoute
   '/api/downloadBeatmap': typeof ApiDownloadBeatmapRoute
   '/api/getBeatmap': typeof ApiGetBeatmapRoute
   '/api/getBeatmaps': typeof ApiGetBeatmapsRoute
+  '/api/multiplayer': typeof ApiMultiplayerRouteWithChildren
+  '/multiplayer/$roomId': typeof MultiplayerRoomIdRoute
+  '/api/multiplayer/room/$roomId': typeof ApiMultiplayerRoomRoomIdRouteWithChildren
+  '/api/multiplayer/room/$roomId/queue': typeof ApiMultiplayerRoomRoomIdQueueRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/faq'
+    | '/multiplayer'
     | '/updates'
     | '/api/downloadBeatmap'
     | '/api/getBeatmap'
     | '/api/getBeatmaps'
+    | '/api/multiplayer'
+    | '/multiplayer/$roomId'
+    | '/api/multiplayer/room/$roomId'
+    | '/api/multiplayer/room/$roomId/queue'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/faq'
+    | '/multiplayer'
     | '/updates'
     | '/api/downloadBeatmap'
     | '/api/getBeatmap'
     | '/api/getBeatmaps'
+    | '/api/multiplayer'
+    | '/multiplayer/$roomId'
+    | '/api/multiplayer/room/$roomId'
+    | '/api/multiplayer/room/$roomId/queue'
   id:
     | '__root__'
     | '/'
     | '/faq'
+    | '/multiplayer'
     | '/updates'
     | '/api/downloadBeatmap'
     | '/api/getBeatmap'
     | '/api/getBeatmaps'
+    | '/api/multiplayer'
+    | '/multiplayer/$roomId'
+    | '/api/multiplayer/room/$roomId'
+    | '/api/multiplayer/room/$roomId/queue'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   FaqRoute: typeof FaqRoute
+  MultiplayerRoute: typeof MultiplayerRouteWithChildren
   UpdatesRoute: typeof UpdatesRoute
   ApiDownloadBeatmapRoute: typeof ApiDownloadBeatmapRoute
   ApiGetBeatmapRoute: typeof ApiGetBeatmapRoute
   ApiGetBeatmapsRoute: typeof ApiGetBeatmapsRoute
+  ApiMultiplayerRoute: typeof ApiMultiplayerRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -115,6 +179,13 @@ declare module '@tanstack/react-router' {
       path: '/updates'
       fullPath: '/updates'
       preLoaderRoute: typeof UpdatesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/multiplayer': {
+      id: '/multiplayer'
+      path: '/multiplayer'
+      fullPath: '/multiplayer'
+      preLoaderRoute: typeof MultiplayerRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/faq': {
@@ -129,6 +200,20 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/multiplayer/$roomId': {
+      id: '/multiplayer/$roomId'
+      path: '/$roomId'
+      fullPath: '/multiplayer/$roomId'
+      preLoaderRoute: typeof MultiplayerRoomIdRouteImport
+      parentRoute: typeof MultiplayerRoute
+    }
+    '/api/multiplayer': {
+      id: '/api/multiplayer'
+      path: '/api/multiplayer'
+      fullPath: '/api/multiplayer'
+      preLoaderRoute: typeof ApiMultiplayerRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/getBeatmaps': {
@@ -152,16 +237,70 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiDownloadBeatmapRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/multiplayer/room/$roomId': {
+      id: '/api/multiplayer/room/$roomId'
+      path: '/room/$roomId'
+      fullPath: '/api/multiplayer/room/$roomId'
+      preLoaderRoute: typeof ApiMultiplayerRoomRoomIdRouteImport
+      parentRoute: typeof ApiMultiplayerRoute
+    }
+    '/api/multiplayer/room/$roomId/queue': {
+      id: '/api/multiplayer/room/$roomId/queue'
+      path: '/queue'
+      fullPath: '/api/multiplayer/room/$roomId/queue'
+      preLoaderRoute: typeof ApiMultiplayerRoomRoomIdQueueRouteImport
+      parentRoute: typeof ApiMultiplayerRoomRoomIdRoute
+    }
   }
 }
+
+interface MultiplayerRouteChildren {
+  MultiplayerRoomIdRoute: typeof MultiplayerRoomIdRoute
+}
+
+const MultiplayerRouteChildren: MultiplayerRouteChildren = {
+  MultiplayerRoomIdRoute: MultiplayerRoomIdRoute,
+}
+
+const MultiplayerRouteWithChildren = MultiplayerRoute._addFileChildren(
+  MultiplayerRouteChildren,
+)
+
+interface ApiMultiplayerRoomRoomIdRouteChildren {
+  ApiMultiplayerRoomRoomIdQueueRoute: typeof ApiMultiplayerRoomRoomIdQueueRoute
+}
+
+const ApiMultiplayerRoomRoomIdRouteChildren: ApiMultiplayerRoomRoomIdRouteChildren =
+  {
+    ApiMultiplayerRoomRoomIdQueueRoute: ApiMultiplayerRoomRoomIdQueueRoute,
+  }
+
+const ApiMultiplayerRoomRoomIdRouteWithChildren =
+  ApiMultiplayerRoomRoomIdRoute._addFileChildren(
+    ApiMultiplayerRoomRoomIdRouteChildren,
+  )
+
+interface ApiMultiplayerRouteChildren {
+  ApiMultiplayerRoomRoomIdRoute: typeof ApiMultiplayerRoomRoomIdRouteWithChildren
+}
+
+const ApiMultiplayerRouteChildren: ApiMultiplayerRouteChildren = {
+  ApiMultiplayerRoomRoomIdRoute: ApiMultiplayerRoomRoomIdRouteWithChildren,
+}
+
+const ApiMultiplayerRouteWithChildren = ApiMultiplayerRoute._addFileChildren(
+  ApiMultiplayerRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   FaqRoute: FaqRoute,
+  MultiplayerRoute: MultiplayerRouteWithChildren,
   UpdatesRoute: UpdatesRoute,
   ApiDownloadBeatmapRoute: ApiDownloadBeatmapRoute,
   ApiGetBeatmapRoute: ApiGetBeatmapRoute,
   ApiGetBeatmapsRoute: ApiGetBeatmapsRoute,
+  ApiMultiplayerRoute: ApiMultiplayerRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

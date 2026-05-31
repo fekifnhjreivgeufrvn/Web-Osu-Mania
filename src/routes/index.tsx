@@ -19,6 +19,7 @@ const indexSearchSchema = z.object({
   sortCriteria: z.string().optional(),
   sortDirection: z.string().optional(),
   collection: z.string().optional(),
+  multiplayerRoomId: z.string().optional(),
 });
 
 export const Route = createFileRoute("/")({
